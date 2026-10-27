@@ -1,0 +1,80 @@
+diff --git a/src/observer/ai_service/ob_ai_service_proxy.cpp b/src/observer/ai_service/ob_ai_service_proxy.cpp
+index 02a75a110..1af7f20ac 100644
+--- a/src/observer/ai_service/ob_ai_service_proxy.cpp
++++ b/src/observer/ai_service/ob_ai_service_proxy.cpp
+@@ -200,7 +200,9 @@ int ObAiServiceProxy::build_ai_endpoint_(ObArenaAllocator &allocator, ObMySQLRes
+   EXTRACT_VARCHAR_FIELD_MYSQL(result, "endpoint_name", name);
+   EXTRACT_VARCHAR_FIELD_MYSQL(result, "ai_model_name", ai_model_name);
+   EXTRACT_VARCHAR_FIELD_MYSQL(result, "url", url);
+-  EXTRACT_VARCHAR_FIELD_MYSQL(result, "access_key", access_key);
++  // access_key is nullable: providers without authentication (e.g. Ollama) store an empty
++  // key, and ALTER_AI_MODEL_ENDPOINT persists it as NULL.
++  EXTRACT_VARCHAR_FIELD_MYSQL_WITH_DEFAULT_VALUE(result, "access_key", access_key, true, false, ""/*wont be used*/);
+   EXTRACT_VARCHAR_FIELD_MYSQL_WITH_DEFAULT_VALUE(result, "provider", provider, true, false, ""/*wont be used*/);
+   EXTRACT_VARCHAR_FIELD_MYSQL_WITH_DEFAULT_VALUE(result, "request_model_name", request_model_name, true, false, ""/*wont be used*/);
+   EXTRACT_VARCHAR_FIELD_MYSQL_WITH_DEFAULT_VALUE(result, "parameters", arguments, true, false, ""/*wont be used*/);
+diff --git a/src/sql/engine/expr/ob_expr_ai/ob_ai_func_utils.cpp b/src/sql/engine/expr/ob_expr_ai/ob_ai_func_utils.cpp
+index b149811b3..eddcfdcba 100644
+--- a/src/sql/engine/expr/ob_expr_ai/ob_ai_func_utils.cpp
++++ b/src/sql/engine/expr/ob_expr_ai/ob_ai_func_utils.cpp
+@@ -285,7 +285,12 @@ int ObOllamaUtils::get_header(common::ObIAllocator &allocator,
+                               common::ObArray<ObString> &headers) 
+ {
+   int ret = OB_SUCCESS;
+-  // ollama header is empty, do nothing
++  // Ollama requires no auth header, but the request body is still JSON.
++  ObString content_type_str("Content-Type: application/json");
++  ObString content_type_c_str;
++  if (OB_FAIL(ob_write_string(allocator, content_type_str, content_type_c_str, true))) {
++  } else if (OB_FAIL(headers.push_back(content_type_c_str))) {
++  }
+   return ret;
+ }
+ 
+diff --git a/src/sql/engine/expr/ob_expr_ai/ob_expr_ai_complete.cpp b/src/sql/engine/expr/ob_expr_ai/ob_expr_ai_complete.cpp
+index 64f98a19e..6b49c6668 100644
+--- a/src/sql/engine/expr/ob_expr_ai/ob_expr_ai_complete.cpp
++++ b/src/sql/engine/expr/ob_expr_ai/ob_expr_ai_complete.cpp
+@@ -130,7 +130,7 @@ int ObExprAIComplete::eval_ai_complete(const ObExpr &expr,
+     }
+ 
+     if (OB_FAIL(ret)) {
+-    } else if (OB_NOT_NULL(arg_config)) {
++    } else if (OB_NOT_NULL(arg_config) && !arg_config->is_null()) {
+       if (OB_FAIL(ObTextStringHelper::read_real_string_data(ctx.exec_ctx_, temp_allocator, *arg_config, expr.args_[2]->datum_meta_, expr.args_[2]->obj_meta_.has_lob_header(), config_str))) {
+       } else if (OB_FAIL(ObAIFuncJsonUtils::get_json_object_form_str(temp_allocator, config_str, config))) {
+       }
+diff --git a/src/sql/engine/expr/ob_expr_ai/ob_expr_ai_rerank.cpp b/src/sql/engine/expr/ob_expr_ai/ob_expr_ai_rerank.cpp
+index 23768f393..e3c302df2 100644
+--- a/src/sql/engine/expr/ob_expr_ai/ob_expr_ai_rerank.cpp
++++ b/src/sql/engine/expr/ob_expr_ai/ob_expr_ai_rerank.cpp
+@@ -124,6 +124,7 @@ int ObExprAIRerank::eval_ai_rerank(const ObExpr &expr, ObEvalCtx &ctx, ObDatum &
+     ObIJsonBase *j_base = nullptr;
+     int64_t batch_size = 20; // max batch size for rerank
+     bool is_null_result = false;
++    const bool has_doc_key = OB_NOT_NULL(arg_doc_key) && !arg_doc_key->is_null();
+     if (OB_FAIL(ObJsonExprHelper::get_json_doc(expr, ctx, temp_allocator, DOCUMENTS_IDX,
+           j_base, is_null_result))) {
+     } else if (OB_ISNULL(j_base)) {
+@@ -141,10 +142,10 @@ int ObExprAIRerank::eval_ai_rerank(const ObExpr &expr, ObEvalCtx &ctx, ObDatum &
+         ObJsonNode *doc_node = document_array->get_value(i);
+         if (OB_ISNULL(doc_node)) {
+           ret = OB_ERR_UNEXPECTED;
+-        } else if (OB_NOT_NULL(arg_doc_key) && doc_node->json_type() != ObJsonNodeType::J_OBJECT) {
++        } else if (has_doc_key && doc_node->json_type() != ObJsonNodeType::J_OBJECT) {
+           ret = OB_INVALID_ARGUMENT;
+           LOG_USER_ERROR(OB_INVALID_ARGUMENT, "ai_rerank, document_array element is not object");
+-        } else if (OB_ISNULL(arg_doc_key) && doc_node->json_type() != ObJsonNodeType::J_STRING) {
++        } else if (!has_doc_key && doc_node->json_type() != ObJsonNodeType::J_STRING) {
+           ret = OB_INVALID_ARGUMENT;
+           LOG_USER_ERROR(OB_INVALID_ARGUMENT, "ai_rerank, document_array element is not string");
+         }
+@@ -160,7 +161,7 @@ int ObExprAIRerank::eval_ai_rerank(const ObExpr &expr, ObEvalCtx &ctx, ObDatum &
+     } 
+ 
+     if (OB_FAIL(ret)) {
+-    } else if (OB_NOT_NULL(arg_doc_key)) {
++    } else if (has_doc_key) {
+       ObString doc_key = arg_doc_key->get_string();
+       if (OB_FAIL(eval_ai_rerank_with_doc_key(expr, ctx, temp_allocator, model_id,
+                   query, document_array, doc_key, *info, *endpoint_info, res))) {

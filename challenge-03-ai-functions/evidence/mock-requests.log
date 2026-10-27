@@ -1,0 +1,11 @@
+{"method":"POST","path":"/compatible-mode/v1/chat/completions","body":{"model":"qwen3-32b","messages":[{"role":"user","content":"hello"}]}}
+{"method":"POST","path":"/compatible-mode/v1/chat/completions","body":{"model":"qwen3-32b","messages":[{"role":"user","content":"describe {\"text\": \"你好\"}"}],"max_tokens":16,"temperature":0.2}}
+{"method":"POST","path":"/compatible-mode/v1/embeddings","body":{"input":["single-row"],"model":"text-embedding-v1"}}
+{"method":"POST","path":"/compatible-mode/v1/embeddings","body":{"input":["dimension-row"],"model":"text-embedding-v1","dimensions":768}}
+{"method":"POST","path":"/compatible-mode/v1/embeddings","body":{"input":["first"],"model":"text-embedding-v1"}}
+{"method":"POST","path":"/compatible-mode/v1/embeddings","body":{"input":["third"],"model":"text-embedding-v1"}}
+{"method":"POST","path":"/v1/rerank","body":{"model":"BAAI/bge-reranker-v2-m3","query":"apple","documents":["apple","banana","fruit","vegetable"]}}
+{"method":"POST","path":"/v1/rerank","body":{"model":"BAAI/bge-reranker-v2-m3","query":"apple","documents":["apple","banana"]}}
+{"method":"POST","path":"/api/generate","body":{"model":"qwen2.5","prompt":"hello","stream":false}}
+{"method":"POST","path":"/api/embed","body":{"input":["hello"],"model":"nomic-embed-text"}}
+{"method":"POST","path":"/api/generate","body":{"model":"qwen2.5","prompt":"hi","stream":false}}

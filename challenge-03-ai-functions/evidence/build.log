@@ -1,0 +1,7 @@
+ninja: Entering directory `build_release'
+[0/2] Re-checking globbed directories...
+[1/5] Building CXX object src/observer/CMakeFiles/ob_server.dir/Unity/unity_ob_server_ob_server_ai_service_0_c___cxx.cxx.obj
+[2/5] Linking CXX static library src\observer\oceanbase_static.lib
+[3/5] Linking CXX executable src\observer\seekdb.exe; Bundling runtime DLLs next to seekdb.exe
+-- BundleRuntimeDllsWindows: bundled 16 DLLs -> C:/Users/m'c'c/Documents/Codex/2026-10-26/https-oceanbase-yuque-com-org-wiki/work/seekdb/build_release/src/observer
+[4/5] C:\Windows\system32\cmd.exe /C "cd /D "C:\Users\m'c'c\Documents\Codex\2026-10-26\https-oceanbase-yuque-com-org-wiki\work\seekdb\build_release\src\observer" && "C:\Users\m'c'c\Documents\Codex\2026-10-26\https-oceanbase-yuque-com-org-wiki\work\seekdb\deps\3rd\tools\cmake\bin\cmake.exe" -E copy C:/Users/m'c'c/Documents/Codex/2026-10-26/https-oceanbase-yuque-com-org-wiki/work/seekdb/build_release/src/observer/seekdb.exe C:/Users/m'c'c/Documents/Codex/2026-10-26/https-oceanbase-yuque-com-org-wiki/work/seekdb/build_release/src/observer/observer.exe"
