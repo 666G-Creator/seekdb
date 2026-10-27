@@ -1,0 +1,26 @@
+{
+  "number": 1947,
+  "html_url": "https://github.com/oceanbase/seekdb/pull/1947",
+  "state": "open",
+  "title": "fix(uuid): fall back to a random node id when MAC discovery fails",
+  "base": "master",
+  "head": "666G-Creator:fix/1480-uuid-node-fallback",
+  "created_at": "2026-10-27T10:43:16Z",
+  "fork": {
+    "full_name": "666G-Creator/seekdb",
+    "private": false,
+    "fork": true,
+    "parent": "oceanbase/seekdb"
+  },
+  "issue": {
+    "number": 1480,
+    "title": "[Bug]: UUID initialization fails to obtain a MAC address, preventing standalone server startup in restricted Linux environments",
+    "state": "open",
+    "labels": [
+      "good first issue",
+      "help wanted",
+      "type: enhancement",
+      "2026-competition"
+    ]
+  }
+}

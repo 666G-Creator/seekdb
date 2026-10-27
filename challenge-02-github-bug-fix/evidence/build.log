@@ -1,0 +1,10 @@
+target: src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_expr_10_c___cxx.cxx.obj
+source: patched upstream master ob_expr_uuid.cpp
+---
+ninja: Entering directory `build_release'
+[0/2] Re-checking globbed directories...
+[1/3] [rust] cargo build workspace (release)
+   Compiling config v0.1.0 (C:\Users\m'c'c\Documents\Codex\2026-10-26\https-oceanbase-yuque-com-org-wiki\work\seekdb\rust\config)
+    Finished `release` profile [optimized + debuginfo] target(s) in 7.23s
+[2/3] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_expr_10_c___cxx.cxx.obj
+ninja_exit=0
