@@ -121,4 +121,4 @@ MYSQL=./tools/fts_mysql.sh bash tools/benchmark/fts_shared_dict_regression.sh
 ## 六、提交与 PR
 
 - 代码提交：本仓库 `2026-competition` 分支（改动见第二节文件清单）。
-- Pull Request：见 [evidence/pr.txt](evidence/pr.txt)（合并到 `oceanbase/seekdb` 的 `2026-competition` 分支）。
+- Pull Request：[oceanbase/seekdb#2098](https://github.com/oceanbase/seekdb/pull/2098)，`666G-Creator:agent/fts-shared-dict` → `oceanbase:2026-competition`，1 个提交 / 14 个文件（元数据见 [evidence/pr.txt](evidence/pr.txt)）。
