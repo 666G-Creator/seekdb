@@ -52,12 +52,15 @@
    - `reset()` 不再析构词典（词典归 hub 所有）。
 3. **`src/storage/fts/ik/ob_ik_char_util.h`**
    - `do_classify` 只解码一次 Unicode，再复用同一个码点做 alpha/arabic/chinese/other_cjk 判断，判断顺序与语义不变。
-4. **`tools/benchmark/fts_shared_dict_regression.sh`（回归测试）**
-   - 同一文本重复 `TOKENIZE` 结果必须一致；
-   - 新建第二个/第三个 IK 全文索引后结果仍一致（验证多解析器共享）；
+4. **`tools/benchmark/fts_shared_dict_regression.sh`（回归测试，16 项检查）**
+   - 同一文本重复 `TOKENIZE` 结果必须一致（按 token 集合比较，哈希表顺序不计）；
+   - 新建第二个 IK 全文索引后结果仍一致（验证多解析器共享同一份词典）；
+   - `ik_mode='max_word'`（`TOKENIZE` 第三参 `[{"additional_args":[{"ik_mode":"max_word"}]}]`）仍产出与 smart 不同的切分，且不影响 smart 结果；
    - 文档的每个词都能被 `MATCH` 命中（验证建索引与查询使用同一份词典）；
-   - `ALTER SYSTEM FLUSH KVCACHE cache='dict_cache'` 后行为不变；
-   - 无关词不应命中。
+   - 无关词不应命中；
+   - 4 个并发会话各 20 次 `TOKENIZE` 全部一致（验证共享词典只读并发安全）；
+   - `ALTER SYSTEM FLUSH KVCACHE cache='dict_cache'` 后行为不变，flush 后新建表仍可正常建索引并 `MATCH`；
+   - 50 行文档全部命中，且长文本仍保留 CJK 词。
 
 ## 三、正确性验证
 
@@ -65,7 +68,7 @@
 | --- | --- | --- |
 | 10 条 `TOKENIZE` 语句（中英混排、数字、全角、空串、单字符） | 与优化前逐字一致 | [evidence/tokenize-before.txt](evidence/tokenize-before.txt) / [evidence/tokenize-after.txt](evidence/tokenize-after.txt) |
 | `MATCH` 命中数（query_cn / query_beng / query_mixed / query_limit） | 8001 / 11000 / 7332 / 20，与优化前相同 | [evidence/bench-before.txt](evidence/bench-before.txt) / [evidence/bench-after.txt](evidence/bench-after.txt) |
-| 新增回归脚本 | PASSED（含 dict_cache flush 场景） | [evidence/regression-test.txt](evidence/regression-test.txt) |
+| 新增回归脚本 | 连续两次 `regression: PASSED`（各 16 项 ok，exit=0） | [evidence/regression-test.txt](evidence/regression-test.txt) |
 
 > `TOKENIZE` 返回的 JSON 数组顺序来自哈希表迭代，比较时对数组元素排序后做逐行 diff，其余字符逐字比较。
 
